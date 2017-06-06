@@ -74,6 +74,7 @@ public:
 
 private slots:
     void about();
+    void on_bold(bool triggered=false);
 
 private:
     void createMenu();

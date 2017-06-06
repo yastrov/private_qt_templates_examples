@@ -88,7 +88,7 @@ void MainWindow::createMenu()
     QAction *italicAction = new QAction(tr("Italic"), this);
 
 //    connect(undoAction, &QAction::triggered, completingTextEdit, &TextEdit::undo);
-    connect(boldAction, &QAction::triggered, completingTextEdit, &TextEdit::on_bold);
+    connect(boldAction, &QAction::triggered, this, &MainWindow::on_bold);
 //    connect(italicAction, &QAction::triggered, completingTextEdit, &TextEdit::on_italic);
 
     QMenu* fileMenu = menuBar()->addMenu(tr("File"));
@@ -138,3 +138,7 @@ void MainWindow::about()
 }
 //! [3]
 
+void MainWindow::on_bold(bool triggered)
+{
+    completingTextEdit->on_bold();
+}
