@@ -225,3 +225,109 @@ void TextEdit::on_italic(bool triggered)
     setFontItalicS();
 }
 
+void TextEdit::dropEvent(QDropEvent *event)
+{
+    QTextEdit::dropEvent(event);
+}
+
+// Вставка MIME данных
+void TextEdit::insertFromMimeData(const QMimeData *source)
+{
+    //    qDebug() << "TextEdit::insertFromMimeData";
+    //    for(const QString &format: source->formats() ) {
+    //        qDebug() << format;
+    //    }
+    //    for(const QUrl &url: source->urls() ) {
+    //        qDebug() << url;
+    //    }
+    if(source->hasImage())
+    {
+        // Принятые данные преобразуются в тип QImage
+        // QImage image = source->imageData().value<QImage>();
+        const QImage image = qvariant_cast<QImage>(source->imageData());
+        if(!image.isNull()){
+            // Генерируется имя ресурса
+            const QString image_name = QString("image%1").arg(qrand());
+            addImageToResAndInsert(image_name, image);
+        } else {
+            emit error(tr("Can't read image data from MimeData!"));
+        }
+        return;
+    }
+
+    QStringList formats;
+    formats << "UsingDefaultDragImage" << "DragImageBits";
+    for(const QString &format: formats) {
+        QByteArray data = source->data(format);
+        if(!data.isNull() && !data.isEmpty()) {
+            QBuffer buffer(&data);
+            const QImage image = getImageFromQIODevice(&buffer);
+            if(!image.isNull()) {
+                // Генерируется имя ресурса
+                const QString image_name = QString("image%1").arg(qrand());
+                addImageToResAndInsert(image_name, image);
+                return;
+            }
+        }
+    }
+
+    for(const QUrl &url: source->urls() ) {
+        if(!url.isLocalFile()) {
+            emit error(tr("Can't insert image from non-local!"));
+//            QTextCursor cursor = this->textCursor();
+//            cursor.insertText(url.toString());
+            addLink(url.toString());
+            continue;
+        }
+        const QString path = url.toLocalFile();
+        const QImage image = getImageFromLocalDrive(path);
+        QString image_name = QString("image%1").arg(qrand());
+        addImageToResAndInsert(image_name, image);
+    }
+}
+
+QImage TextEdit::getImageFromLocalDrive(const QString &path)
+{
+    if(path.isNull() || path.isEmpty())
+        return QImage();
+    QImageReader reader(path);
+    if(!reader.autoDetectImageFormat())
+        reader.setAutoDetectImageFormat(true);
+    if(!reader.canRead()) {
+        emit error(reader.errorString());
+        return QImage();
+    }
+    const QImage image = reader.read();
+    if(!image.isNull()) {
+        emit error(reader.errorString());
+    }
+    return image;
+}
+
+QImage TextEdit::getImageFromQIODevice(QIODevice *device)
+{
+    QImageReader reader(device);
+    if(!reader.autoDetectImageFormat())
+        reader.setAutoDetectImageFormat(true);
+    if(!reader.canRead()) {
+        emit error(reader.errorString());
+        return QImage();
+    }
+    const QImage image = reader.read();
+    if(!image.isNull()) {
+        emit error(reader.errorString());
+    }
+    return image;
+}
+
+void TextEdit::addImageToResAndInsert(const QString &name, const QImage &image)
+{
+    if(image.isNull()) return;
+    QTextCursor cursor = this->textCursor();
+    QTextDocument *document = this->document();
+    // Ресурс добавляется в хранилище ресурсов документа
+    document->addResource(QTextDocument::ImageResource, QUrl(name), image);
+    // Картинка вставляется в текст
+    cursor.insertImage(name);
+}
+

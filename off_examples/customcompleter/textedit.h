@@ -61,6 +61,13 @@
 #include <QAbstractItemModel>
 #include <QScrollBar>
 #include <QTextDocumentWriter>
+// For Drag and Drop image files:
+#include <QImage>
+#include <QMimeData>
+#include <QUrl>
+#include <QImageReader>
+#include <QIODevice>
+#include <QBuffer>
 
 //! [0]
 class TextEdit : public QTextEdit
@@ -83,9 +90,18 @@ public slots:
     void on_bold(bool triggered=false);
     void on_italic(bool triggered=false);
 
+signals:
+    void error(const QString &message);
+
 protected:
     void keyPressEvent(QKeyEvent *e) override;
     void focusInEvent(QFocusEvent *e) override;
+    // For Drag and Drop image
+    void dropEvent(QDropEvent *event) override;
+    void insertFromMimeData(const QMimeData *source) override;
+    QImage getImageFromLocalDrive(const QString &path);
+    QImage getImageFromQIODevice(QIODevice *device);
+    void addImageToResAndInsert(const QString &name, const QImage &image);
 
 private slots:
     void insertCompletion(const QString &completion);
