@@ -189,6 +189,20 @@ bool TextEdit::exportToHTML(const QString &fileName)
     return writer.write(document());
 }
 
+bool TextEdit::importFromHTML(const QString &fileName)
+{
+    QFile file(fileName);
+    if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        emit error(file.errorString());
+        return false;
+    }
+    QTextStream in(&file);
+    const QString data = in.readAll();
+    this->document()->setHtml(data);
+    file.close();
+    return true;
+}
+
 void TextEdit::setFontBoldS()
 {
     QTextCursor cursor = textCursor();

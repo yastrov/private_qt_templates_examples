@@ -83,6 +83,7 @@ public:
 
     bool exportToODF(const QString &fileName);
     bool exportToHTML(const QString &fileName);
+    bool importFromHTML(const QString &fileName);
     void setFontBoldS();
     void setFontItalicS();
 
