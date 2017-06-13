@@ -76,10 +76,14 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::createMenu()
 {
     QAction *exitAction = new QAction(tr("Exit"), this);
+    QAction *saveAction = new QAction(tr("Save"), this);
+    QAction *loadAction = new QAction(tr("Load"), this);
     QAction *aboutAct = new QAction(tr("About"), this);
     QAction *aboutQtAct = new QAction(tr("About Qt"), this);
 
     connect(exitAction, &QAction::triggered, qApp, &QApplication::quit);
+    connect(saveAction, &QAction::triggered, this, &MainWindow::save);
+    connect(loadAction, &QAction::triggered, this, &MainWindow::load);
     connect(aboutAct, &QAction::triggered, this, &MainWindow::about);
     connect(aboutQtAct, &QAction::triggered, qApp, &QApplication::aboutQt);
 
@@ -92,6 +96,8 @@ void MainWindow::createMenu()
 //    connect(italicAction, &QAction::triggered, completingTextEdit, &TextEdit::on_italic);
 
     QMenu* fileMenu = menuBar()->addMenu(tr("File"));
+    fileMenu->addAction(saveAction);
+    fileMenu->addAction(loadAction);
     fileMenu->addAction(exitAction);
 
     QMenu* editMenu = menuBar()->addMenu(tr("Edit"));
@@ -140,5 +146,60 @@ void MainWindow::about()
 
 void MainWindow::on_bold(bool triggered)
 {
+    Q_UNUSED(triggered)
     completingTextEdit->on_bold();
+}
+
+void MainWindow::save()
+{
+    const QString filter = "HTML files (*.html);;ODF files (*.odt)";
+    QString cfilter = "HTML files (*.html)";
+    const QString fileName = QFileDialog::getSaveFileName(this,
+                                                          tr("Save File"),
+                                                          QDir::homePath(),
+                                                          filter,
+                                                          &cfilter);
+    if(!fileName.isNull() && !fileName.isEmpty())
+    {
+        const QFileInfo qF(fileName);
+        if(qF.exists())
+        {
+            const QMessageBox::StandardButton reply = QMessageBox::question(this,
+                                                                            windowTitle(),
+                                                                            tr("File already exists!\nOverwrite?"),
+                                                                            QMessageBox::Yes|QMessageBox::No);
+            if (reply == QMessageBox::No)
+            {
+                return;
+            }
+        }
+        QString ext = qF.suffix().toLower();
+        if(ext.isNull() || ext.isEmpty())
+            ext = "odt";
+        if(ext == "html") {
+            completingTextEdit->exportToHTML(fileName);
+        } else
+            if(ext == "odt") {
+                completingTextEdit->exportToODF(fileName);
+            }
+    }
+}
+
+void MainWindow::load()
+{
+    const QString filter = "HTML files (*.html)";
+    QString cfilter = "HTML files (*.html)";
+    const QString fileName = QFileDialog::getOpenFileName(this,
+                                                          tr("Open File"),
+                                                          QDir::homePath(),
+                                                          filter,
+                                                          &cfilter);
+    if(!fileName.isNull() && !fileName.isEmpty())
+    {
+        const QFileInfo qF(fileName);
+        if(qF.exists())
+        {
+            completingTextEdit->importFromHTML(fileName);
+        }
+    }
 }
