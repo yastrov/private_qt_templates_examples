@@ -68,6 +68,7 @@
 #include <QImageReader>
 #include <QIODevice>
 #include <QBuffer>
+#include <QDesktopServices>
 
 //! [0]
 class TextEdit : public QTextEdit
@@ -103,6 +104,10 @@ protected:
     QImage getImageFromLocalDrive(const QString &path);
     QImage getImageFromQIODevice(QIODevice *device);
     void addImageToResAndInsert(const QString &name, const QImage &image);
+
+    void addLink(const QString &url, const QString &title = QString());
+    QTextCursor addLink(QTextCursor cursor, const QString &url, const QString &title = QString());
+    bool eventFilter(QObject *obj, QEvent *event);
 
 private slots:
     void insertCompletion(const QString &completion);

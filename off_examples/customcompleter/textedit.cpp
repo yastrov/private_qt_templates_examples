@@ -59,6 +59,8 @@ TextEdit::TextEdit(QWidget *parent)
     setPlainText(tr("This TextEdit provides autocompletions for words that have more than"
                     " 3 characters. You can trigger autocompletion using ") +
                     QKeySequence("Ctrl+E").toString(QKeySequence::NativeText));
+    //Set event filter for open link in browser
+    viewport()->installEventFilter(this);
 }
 //! [0]
 
@@ -290,7 +292,7 @@ void TextEdit::insertFromMimeData(const QMimeData *source)
             emit error(tr("Can't insert image from non-local!"));
 //            QTextCursor cursor = this->textCursor();
 //            cursor.insertText(url.toString());
-            addLink(url.toString());
+            addLink(url.toString(), url.toString());
             continue;
         }
         const QString path = url.toLocalFile();
@@ -345,3 +347,46 @@ void TextEdit::addImageToResAndInsert(const QString &name, const QImage &image)
     cursor.insertImage(name);
 }
 
+
+void TextEdit::addLink(const QString &url, const QString &title)
+{
+    QTextCursor cursor = this->textCursor();
+    cursor = addLink(cursor, url, title);
+    setTextCursor(cursor);
+}
+
+QTextCursor TextEdit::addLink(QTextCursor cursor, const QString &url, const QString &title)
+{
+    //From http://www.qtcentre.org/archive/index.php/t-37580.html
+//    if(title.isEmpty()) title = url;
+    QTextCharFormat original = cursor.charFormat();
+    QTextCharFormat format;
+    format.setForeground(QApplication::palette().color(QPalette::Link));
+    format.setFontUnderline(true);
+    format.setAnchor(true);
+    format.setAnchorHref(url);
+    format.setAnchorName(title);
+    cursor.mergeCharFormat(format);
+    cursor.insertText(title, format);
+
+//    cursor.insertHtml(QString("<a href=\"%1\">%2</a>").arg(url, title));
+//    cursor.setCharFormat(original);
+    return cursor;
+}
+
+bool TextEdit::eventFilter(QObject *obj, QEvent *event) {
+
+    if (event->type() == QMouseEvent::MouseButtonRelease) {
+      QTextCursor cursor = this->textCursor();
+      QTextCharFormat format = cursor.charFormat();
+      if (format.isAnchor()) {
+          QString url = format.anchorHref();
+          if (!url.isNull() && !url.isEmpty() &&
+                  (url.startsWith("http") || url.startsWith("ftp"))
+                  ){
+              QDesktopServices::openUrl(QUrl(url));
+          }
+      }
+  }
+  return QWidget::eventFilter(obj, event);
+}
