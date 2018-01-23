@@ -1,3 +1,12 @@
+/*
+If program have no QMainWindow or other main window or main dialog,
+only QSystemTrayIcon, program may crash after show QMessageBox or QDialog.
+
+Solution, in file main.c:
+    QApplication a(argc, argv);
+    
+    a.setQuitOnLastWindowClosed(false);
+*/
 #include "trayicon.h"
 
 TrayIcon::TrayIcon(QObject *parent):
